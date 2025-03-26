@@ -25,6 +25,7 @@
 
 ## PREAMBLE --------------------------------------------------------------------
 #' @import logger
+NULL
 
 #' @name askOllama_preamble
 #' @keywords internal
