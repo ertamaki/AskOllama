@@ -2,9 +2,7 @@ Package: AskOllama
 Title: A Streamlined Interface to Query Ollama's Chat Completion API
 Version: 2.0.032025
 Authors@R: c(
-    person("Eduardo", "Tamaki", email = "eduardo@tamaki.ai", role = c("aut", "cre")),
-    person("Levente", "Littvay", email = "levi@littvay.com", role = "aut")
-    )
+    person("Eduardo", "Tamaki", email = "eduardo@tamaki.ai", role = c("aut", "cre"))
 Description: AskOllama provides a versatile R interface for interacting with Ollama's 
     Chat Completion API. It supports single-turn, few-shot, and multi-turn conversational
     prompts, and can seamlessly incorporate web-based research to enrich prompt context.
