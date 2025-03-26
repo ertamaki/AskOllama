@@ -24,6 +24,8 @@
 #' License: MIT
 
 ## PREAMBLE --------------------------------------------------------------------
+#' @import logger
+
 #' @name askOllama_preamble
 #' @keywords internal
 if (!require("pacman")) install.packages("pacman")
@@ -589,8 +591,3 @@ ask_ollama <- function(messages = NULL,
 ##    - Explore asynchronous processing (e.g., with the later package) for non-blocking updates.
 ##    - Implement retry logic for transient connection issues.
 
-
-## 9. Testing and Documentation:
-##    - Use the testthat package to build unit tests covering valid responses, invalid parameters, and error conditions.
-##    - Employ httptest or mockery to simulate API responses for testing.
-##    - Create vignettes with detailed examples on using both streaming and non-streaming modes.

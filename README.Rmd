@@ -35,12 +35,10 @@ knitr::opts_chunk$set(
 
 You can install the development version of AskOllama from GitHub using:
 
-``` r
+```{r eval=FALSE}
 # install.packages("devtools")
 devtools::install_github("ertamaki/AskOllama")
 ```
-
-Make sure to replace `yourusername` with your actual GitHub username.
 
 ## Usage
 

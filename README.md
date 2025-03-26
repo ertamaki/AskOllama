@@ -35,8 +35,6 @@ You can install the development version of AskOllama from GitHub using:
 devtools::install_github("ertamaki/AskOllama")
 ```
 
-Make sure to replace `yourusername` with your actual GitHub username.
-
 ## Usage
 
 ### Checking Available Models
