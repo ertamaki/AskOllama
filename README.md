@@ -178,6 +178,37 @@ response <- ask_ollama(
 cat(response)
 ```
 
+#### Verbose Output Control
+
+The `verbose` parameter allows you to control the level of output detail
+during function execution:
+
+``` r
+# With verbose output (shows JSON request and progress bar)
+response <- ask_ollama(
+  user_content = "Explain quantum computing in simple terms.",
+  model = "mistral-large:123b-instruct-2411-q8_0",
+  verbose = TRUE
+)
+
+# Without verbose output (cleaner execution)
+response <- ask_ollama(
+  user_content = "Explain quantum computing in simple terms.",
+  model = "mistral-large:123b-instruct-2411-q8_0",
+  verbose = FALSE  # This is the default
+)
+```
+
+When `verbose = TRUE`, the function will:  
+- Display the complete JSON request body sent to the API.  
+- Show a progress bar during API calls for non-streaming requests.  
+- Provide more detailed visual feedback throughout the execution
+process.
+
+This parameter is particularly useful for debugging issues with API
+requests or when you need to inspect the exact parameters being sent to
+the model.
+
 ## Error Handling & Logging
 
 **AskOllama** provides robust error handling and logging mechanisms to

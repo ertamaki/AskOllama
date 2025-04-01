@@ -269,6 +269,7 @@ set_pb_style <- function() {
 #' @param web Logical. If \code{TRUE}, enables web research.
 #' @param web_url URL to fetch web content from.
 #' @param web_content_limit Maximum number of characters to be fetched.
+#' @param verbose Logical. If \code{TRUE}, shows detailed request/response information.
 #'
 #' @return Character string containing the model's response
 #' @examples
@@ -299,7 +300,8 @@ ask_ollama <- function(messages = NULL,
                        strict_token_limit = FALSE,
                        web = FALSE,
                        web_url = NULL,
-                       web_content_limit = 20000) {
+                       web_content_limit = 20000,
+                       verbose = FALSE) {  # Add verbose parameter with default FALSE
 
   ## Web research functionality (if enabled)
   if (web && !is.null(web_url)) {
@@ -442,7 +444,7 @@ ask_ollama <- function(messages = NULL,
 
     # Convert body to JSON
     body_json <- jsonlite::toJSON(body, auto_unbox = TRUE)
-    print(body_json)
+    if (verbose) print(body_json)  # Only print when verbose=TRUE
     log_debug(sprintf("Request body: %s", body_json))
 
     # Initialize variables for token counting
@@ -540,20 +542,31 @@ ask_ollama <- function(messages = NULL,
 
     # Convert body to JSON
     body_json <- jsonlite::toJSON(body, auto_unbox = TRUE)
-    print(body_json)
+    if (verbose) print(body_json)  # Only print when verbose=TRUE
     log_debug(sprintf("Request body: %s", body_json))
 
     tryCatch({
       log_info("Sending request to Ollama /api/chat endpoint...")
 
-      response <- with_progress({
+      # Only show progress bar when verbose=TRUE
+      response <- if (verbose) {
+        with_progress({
+          httr::POST(
+            url   = paste0(.askai_env$API_ENDPOINT, "/chat"),
+            body  = body_json,
+            encode = "json",
+            httr::content_type("application/json")
+          )
+        })
+      } else {
+        # No progress bar in non-verbose mode
         httr::POST(
           url   = paste0(.askai_env$API_ENDPOINT, "/chat"),
           body  = body_json,
           encode = "json",
           httr::content_type("application/json")
         )
-      })
+      }
 
       # Check for errors
       if (httr::http_error(response)) {
@@ -585,6 +598,7 @@ ask_ollama <- function(messages = NULL,
     })
   }
 }
+
 
 ## IDEAS FOR FURTHER IMPROVEMENTS:
 ## 8. Streaming Response Handling:
