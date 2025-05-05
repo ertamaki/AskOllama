@@ -22,7 +22,8 @@ ask_ollama(
   strict_token_limit = FALSE,
   web = FALSE,
   web_url = NULL,
-  web_content_limit = 20000
+  web_content_limit = 20000,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -59,6 +60,8 @@ ask_ollama(
 \item{web_url}{URL to fetch web content from.}
 
 \item{web_content_limit}{Maximum number of characters to be fetched.}
+
+\item{verbose}{Logical. If \code{TRUE}, shows detailed request/response information.}
 }
 \value{
 Character string containing the model's response
