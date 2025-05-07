@@ -76,88 +76,99 @@ log_layout(custom_layout)
 
 ## AVAILABLE MODELS ----------------------------------------------------------
 .askai_models <- list(
+  "qwen3:235b" = list(
+    size = "142 GB",
+    description = "Large Qwen 235B model (MoE)"
+  ),
+  "gemma3:27b-it-fp16" = list(
+    size = "54 GB",
+    description = "Instruction-tuned Gemma 3B model"
+  ),
+  "nomic-embed-text:latest" = list(
+    size = "274 MB",
+    description = "Nomic text embedding model"
+  ),
   "qwen3:32b-fp16" = list(
-    size        = "65 GB",
+    size = "65 GB",
     description = "Large Qwen 32B FP16 model"
   ),
   "qwen3:30b-a3b-fp16" = list(
-    size        = "61 GB",
+    size = "61 GB",
     description = "Large Qwen 30B A3B FP16 model"
   ),
   "mistral-small3.1:24b-instruct-2503-fp16" = list(
-    size        = "48 GB",
+    size = "48 GB",
     description = "Mistral-small 3.1 instruction model"
   ),
   "phi4-reasoning:14b-plus-fp16" = list(
-    size        = "29 GB",
+    size = "29 GB",
     description = "Phi4 reasoning-enhanced “plus” model"
   ),
   "qwq:32b-fp16" = list(
-    size        = "65 GB",
+    size = "65 GB",
     description = "Medium-sized general purpose model"
   ),
   "mistral-small:24b-instruct-2501-fp16" = list(
-    size        = "47 GB",
+    size = "47 GB",
     description = "Medium-sized Mistral instruction model"
   ),
   "deepseek-r1:70b-llama-distill-fp16" = list(
-    size        = "141 GB",
+    size = "141 GB",
     description = "Large distilled LLaMA model"
   ),
   "deepseek-r1:32b-qwen-distill-fp16" = list(
-    size        = "65 GB",
+    size = "65 GB",
     description = "Medium-sized distilled Qwen model"
   ),
   "deepseek-r1:70b-llama-distill-q8_0" = list(
-    size        = "74 GB",
+    size = "74 GB",
     description = "Quantized large distilled LLaMA model"
   ),
   "phi4:14b-fp16" = list(
-    size        = "29 GB",
+    size = "29 GB",
     description = "Compact general-purpose model"
   ),
   "llama3.3:70b-instruct-fp16" = list(
-    size        = "141 GB",
+    size = "141 GB",
     description = "Large instruction-tuned LLaMA model"
   ),
   "mistral-large:123b-instruct-2411-q8_0" = list(
-    size        = "130 GB",
+    size = "130 GB",
     description = "Large Mistral model with high accuracy"
   ),
   "falcon3:10b-instruct-fp16" = list(
-    size        = "20 GB",
+    size = "20 GB",
     description = "Compact instruction-tuned model"
   ),
   "mistral-nemo:12b-instruct-2407-fp16" = list(
-    size        = "24 GB",
+    size = "24 GB",
     description = "Efficient Mistral model"
   ),
   "llama3.2-vision:11b-instruct-fp16" = list(
-    size        = "21 GB",
+    size = "21 GB",
     description = "Vision-capable LLaMA model"
   ),
   "marco-o1:7b-fp16" = list(
-    size        = "15 GB",
+    size = "15 GB",
     description = "Compact general-purpose model"
   ),
   "llama3.3:70b-instruct-q8_0" = list(
-    size        = "74 GB",
+    size = "74 GB",
     description = "Large instruction-tuned LLaMA model (quantized)"
   ),
   "dolphin-llama3:70b-v2.9-q8_0" = list(
-    size        = "74 GB",
+    size = "74 GB",
     description = "Fine-tuned LLaMA model (quantized)"
   ),
   "qwen2.5:32b-instruct-fp16" = list(
-    size        = "65 GB",
+    size = "65 GB",
     description = "Medium-sized instruction model"
   ),
   "mistral-small:22b-instruct-2409-fp16" = list(
-    size        = "44 GB",
+    size = "44 GB",
     description = "Small Mistral model with high accuracy"
   )
 )
-
 ## ERROR HANDLING -----------------------------------------------------------
 .askai_errors <- list(
   MODEL_NOT_FOUND = "Model '%s' not found. Use list_models() to see available models.",
