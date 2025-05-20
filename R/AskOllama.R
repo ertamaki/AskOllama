@@ -36,7 +36,9 @@ pacman::p_load(
   jsonlite,   # JSON parser and generator (1.8.9)
   logger,     # Logging functionality
   pbapply,    # Progress bars
-  crayon      # Colored terminal output
+  crayon,     # Colored terminal output
+  progress,   # Progress bar support
+  curl        # Streaming HTTP requests
 )
 
 ## GLOBAL CONFIGURATION -------------------------------------------------------
@@ -563,49 +565,82 @@ ask_ollama <- function(messages = NULL,
     tryCatch({
       log_info("Sending request to Ollama /api/chat endpoint...")
 
-      # Only show progress bar when verbose=TRUE
-      response <- if (verbose) {
-        with_progress({
+      if (stream) {
+        ## Streaming response handling
+        handle <- curl::new_handle()
+        curl::handle_setheaders(handle, "Content-Type" = "application/json")
+        curl::handle_setopt(handle, postfields = body_json, post = TRUE)
+
+        url <- paste0(.askai_env$API_ENDPOINT, "/chat")
+        conn <- curl::curl(url, handle = handle, open = "r")
+        on.exit(try(close(conn), silent = TRUE))
+
+        log_info("Starting streaming response...")
+        collected_response <- ""
+
+        while (length(line <- readLines(conn, n = 1)) > 0) {
+          parsed_chunk <- tryCatch(jsonlite::fromJSON(line), error = function(e) NULL)
+          token <- NULL
+          if (!is.null(parsed_chunk)) {
+            if (!is.null(parsed_chunk$message$content)) {
+              token <- parsed_chunk$message$content
+            } else if (!is.null(parsed_chunk$response)) {
+              token <- parsed_chunk$response
+            }
+          }
+          if (!is.null(token) && nchar(token) > 0) {
+            collected_response <- paste0(collected_response, token)
+          }
+        }
+
+        log_info("Completed streaming response")
+        return(collected_response)
+
+      } else {
+        # Only show progress bar when verbose=TRUE
+        response <- if (verbose) {
+          with_progress({
+            httr::POST(
+              url   = paste0(.askai_env$API_ENDPOINT, "/chat"),
+              body  = body_json,
+              encode = "json",
+              httr::content_type("application/json")
+            )
+          })
+        } else {
+          # No progress bar in non-verbose mode
           httr::POST(
             url   = paste0(.askai_env$API_ENDPOINT, "/chat"),
             body  = body_json,
             encode = "json",
             httr::content_type("application/json")
           )
-        })
-      } else {
-        # No progress bar in non-verbose mode
-        httr::POST(
-          url   = paste0(.askai_env$API_ENDPOINT, "/chat"),
-          body  = body_json,
-          encode = "json",
-          httr::content_type("application/json")
-        )
-      }
+        }
 
-      # Check for errors
-      if (httr::http_error(response)) {
-        log_error(sprintf("API request failed: %s", httr::http_status(response)$message))
-        stop("API request failed: ", httr::http_status(response)$message)
-      }
+        # Check for errors
+        if (httr::http_error(response)) {
+          log_error(sprintf("API request failed: %s", httr::http_status(response)$message))
+          stop("API request failed: ", httr::http_status(response)$message)
+        }
 
-      # Parse JSON response
-      content <- httr::content(response, "text", encoding = "UTF-8")
-      parsed  <- jsonlite::fromJSON(content)
+        # Parse JSON response
+        content <- httr::content(response, "text", encoding = "UTF-8")
+        parsed  <- jsonlite::fromJSON(content)
 
-      # Log the parsed response for debugging
-      log_debug(sprintf("Parsed JSON: %s", jsonlite::toJSON(parsed, auto_unbox = TRUE)))
+        # Log the parsed response for debugging
+        log_debug(sprintf("Parsed JSON: %s", jsonlite::toJSON(parsed, auto_unbox = TRUE)))
 
-      log_info("Successfully received response from Ollama API")
+        log_info("Successfully received response from Ollama API")
 
-      # Check if 'response' exists and is non-empty
-      if (!is.null(parsed$response) && nchar(parsed$response) > 0) {
-        return(parsed$response)
-      } else if (!is.null(parsed$message$content) && nchar(parsed$message$content) > 0) {
-        return(parsed$message$content)
-      } else {
-        log_warn("Received empty response from model.")
-        return(NA_character_)
+        # Check if 'response' exists and is non-empty
+        if (!is.null(parsed$response) && nchar(parsed$response) > 0) {
+          return(parsed$response)
+        } else if (!is.null(parsed$message$content) && nchar(parsed$message$content) > 0) {
+          return(parsed$message$content)
+        } else {
+          log_warn("Received empty response from model.")
+          return(NA_character_)
+        }
       }
 
     }, error = function(e) {
