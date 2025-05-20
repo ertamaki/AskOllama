@@ -245,8 +245,17 @@ validate_numeric <- function(value, min, max, param_name) {
 #' @param expr Expression to evaluate with progress bar
 #' @keywords internal
 with_progress <- function(expr) {
+  pb <- progress::progress_bar$new(
+    format = "Request [:bar] :percent Elapsed: :elapsed",
+    total = 3,
+    clear = FALSE
+  )
+  pb$tick(0)
   message("\nSending request to Ollama...")
   result <- eval(expr)
+  pb$tick()
+  message("Processing response...")
+  pb$update(1)
   message("Request completed.")
   return(result)
 }
@@ -260,6 +269,19 @@ set_pb_style <- function() {
     clear = FALSE
   )
   return(style_pb)
+}
+
+## VERBOSE ---------------------------------------------------------------
+#' Show request details when verbose
+#' @keywords internal
+show_verbose_details <- function(model, num_predict, temperature, top_p, top_k,
+                                 stream, web, web_url) {
+  message(crayon::green$bold("Ollama Request Details:"))
+  message(sprintf("  Model: %s", model))
+  message(sprintf("  Tokens: %s | Temp: %s | Top_p: %s | Top_k: %s",
+                  num_predict, temperature, top_p, top_k))
+  message(sprintf("  Streaming: %s", stream))
+  if (web && !is.null(web_url)) message(sprintf("  Web URL: %s", web_url))
 }
 
 #' Query Ollama's Chat Completion Endpoint
@@ -426,6 +448,11 @@ ask_ollama <- function(messages = NULL,
     stop(.askai_errors$INVALID_TOP_P)
   }
 
+  if (verbose) {
+    show_verbose_details(model, num_predict, temperature, top_p, top_k,
+                         stream, web, web_url)
+  }
+
   # Allow manual message construction or simple two-turn construction
   if (is.null(messages)) {
     if (is.null(user_content)) {
@@ -470,11 +497,11 @@ ask_ollama <- function(messages = NULL,
     token_limit_reached <- FALSE
 
     # Initialize a progress bar for streaming tokens
-    pb <- progress::progress_bar$new(
+    pb <- if (verbose) progress::progress_bar$new(
       format = "Tokens: [:bar] :percent ETA: :eta",
       total = num_predict,
       clear = FALSE
-    )
+    ) else NULL
 
     # Create a custom curl handle for more control
     handle <- curl::new_handle()
@@ -511,7 +538,7 @@ ask_ollama <- function(messages = NULL,
             # Add token to response
             collected_response <- paste0(collected_response, token)
             token_count <- token_count + 1
-            pb$tick()  # Update progress bar for each token received
+            if (!is.null(pb)) pb$tick()  # Update progress bar for each token received
 
             # Check if we've reached the token limit
             if (token_count >= num_predict) {
@@ -577,6 +604,11 @@ ask_ollama <- function(messages = NULL,
 
         log_info("Starting streaming response...")
         collected_response <- ""
+        pb_stream <- if (verbose) progress::progress_bar$new(
+          format = "Tokens: [:bar] :percent ETA: :eta",
+          clear = FALSE,
+          total = num_predict
+        ) else NULL
 
         while (length(line <- readLines(conn, n = 1)) > 0) {
           parsed_chunk <- tryCatch(jsonlite::fromJSON(line), error = function(e) NULL)
@@ -588,6 +620,7 @@ ask_ollama <- function(messages = NULL,
           }
           if (!is.null(token) && nchar(token) > 0) {
             collected_response <- paste0(collected_response, token)
+            if (!is.null(pb_stream)) pb_stream$tick()
           }
         }
 
