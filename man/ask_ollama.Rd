@@ -61,7 +61,7 @@ ask_ollama(
 
 \item{web_content_limit}{Maximum number of characters to be fetched.}
 
-\item{verbose}{Logical. If \code{TRUE}, shows detailed request/response information.}
+\item{verbose}{Logical. If \code{TRUE}, shows detailed request/response information and displays progress bars.}
 }
 \value{
 Character string containing the model's response

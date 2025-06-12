@@ -36,7 +36,9 @@ pacman::p_load(
   jsonlite,   # JSON parser and generator (1.8.9)
   logger,     # Logging functionality
   pbapply,    # Progress bars
-  crayon      # Colored terminal output
+  crayon,     # Colored terminal output
+  progress,   # Progress bar support
+  curl        # Streaming HTTP requests
 )
 
 ## GLOBAL CONFIGURATION -------------------------------------------------------
@@ -243,8 +245,17 @@ validate_numeric <- function(value, min, max, param_name) {
 #' @param expr Expression to evaluate with progress bar
 #' @keywords internal
 with_progress <- function(expr) {
+  pb <- progress::progress_bar$new(
+    format = "Request [:bar] :percent Elapsed: :elapsed",
+    total = 3,
+    clear = FALSE
+  )
+  pb$tick(0)
   message("\nSending request to Ollama...")
   result <- eval(expr)
+  pb$tick()
+  message("Processing response...")
+  pb$update(1)
   message("Request completed.")
   return(result)
 }
@@ -258,6 +269,19 @@ set_pb_style <- function() {
     clear = FALSE
   )
   return(style_pb)
+}
+
+## VERBOSE ---------------------------------------------------------------
+#' Show request details when verbose
+#' @keywords internal
+show_verbose_details <- function(model, num_predict, temperature, top_p, top_k,
+                                 stream, web, web_url) {
+  message(crayon::green$bold("Ollama Request Details:"))
+  message(sprintf("  Model: %s", model))
+  message(sprintf("  Tokens: %s | Temp: %s | Top_p: %s | Top_k: %s",
+                  num_predict, temperature, top_p, top_k))
+  message(sprintf("  Streaming: %s", stream))
+  if (web && !is.null(web_url)) message(sprintf("  Web URL: %s", web_url))
 }
 
 #' Query Ollama's Chat Completion Endpoint
@@ -424,6 +448,11 @@ ask_ollama <- function(messages = NULL,
     stop(.askai_errors$INVALID_TOP_P)
   }
 
+  if (verbose) {
+    show_verbose_details(model, num_predict, temperature, top_p, top_k,
+                         stream, web, web_url)
+  }
+
   # Allow manual message construction or simple two-turn construction
   if (is.null(messages)) {
     if (is.null(user_content)) {
@@ -468,11 +497,11 @@ ask_ollama <- function(messages = NULL,
     token_limit_reached <- FALSE
 
     # Initialize a progress bar for streaming tokens
-    pb <- progress::progress_bar$new(
+    pb <- if (verbose) progress::progress_bar$new(
       format = "Tokens: [:bar] :percent ETA: :eta",
       total = num_predict,
       clear = FALSE
-    )
+    ) else NULL
 
     # Create a custom curl handle for more control
     handle <- curl::new_handle()
@@ -509,7 +538,7 @@ ask_ollama <- function(messages = NULL,
             # Add token to response
             collected_response <- paste0(collected_response, token)
             token_count <- token_count + 1
-            pb$tick()  # Update progress bar for each token received
+            if (!is.null(pb)) pb$tick()  # Update progress bar for each token received
 
             # Check if we've reached the token limit
             if (token_count >= num_predict) {
@@ -563,49 +592,86 @@ ask_ollama <- function(messages = NULL,
     tryCatch({
       log_info("Sending request to Ollama /api/chat endpoint...")
 
-      # Only show progress bar when verbose=TRUE
-      response <- if (verbose) {
-        with_progress({
+      if (stream) {
+        ## Streaming response handling
+        handle <- curl::new_handle()
+        curl::handle_setheaders(handle, "Content-Type" = "application/json")
+        curl::handle_setopt(handle, postfields = body_json, post = TRUE)
+
+        url <- paste0(.askai_env$API_ENDPOINT, "/chat")
+        conn <- curl::curl(url, handle = handle, open = "r")
+        on.exit(try(close(conn), silent = TRUE))
+
+        log_info("Starting streaming response...")
+        collected_response <- ""
+        pb_stream <- if (verbose) progress::progress_bar$new(
+          format = "Tokens: [:bar] :percent ETA: :eta",
+          clear = FALSE,
+          total = num_predict
+        ) else NULL
+
+        while (length(line <- readLines(conn, n = 1)) > 0) {
+          parsed_chunk <- tryCatch(jsonlite::fromJSON(line), error = function(e) NULL)
+          token <- NULL
+          if (!is.null(parsed_chunk$message$content)) {
+            token <- parsed_chunk$message$content
+          } else if (!is.null(parsed_chunk$response)) {
+            token <- parsed_chunk$response
+          }
+          if (!is.null(token) && nchar(token) > 0) {
+            collected_response <- paste0(collected_response, token)
+            if (!is.null(pb_stream)) pb_stream$tick()
+          }
+        }
+
+        log_info("Completed streaming response")
+        return(collected_response)
+
+      } else {
+        # Only show progress bar when verbose=TRUE
+        response <- if (verbose) {
+          with_progress({
+            httr::POST(
+              url   = paste0(.askai_env$API_ENDPOINT, "/chat"),
+              body  = body_json,
+              encode = "json",
+              httr::content_type("application/json")
+            )
+          })
+        } else {
+          # No progress bar in non-verbose mode
           httr::POST(
             url   = paste0(.askai_env$API_ENDPOINT, "/chat"),
             body  = body_json,
             encode = "json",
             httr::content_type("application/json")
           )
-        })
-      } else {
-        # No progress bar in non-verbose mode
-        httr::POST(
-          url   = paste0(.askai_env$API_ENDPOINT, "/chat"),
-          body  = body_json,
-          encode = "json",
-          httr::content_type("application/json")
-        )
-      }
+        }
 
-      # Check for errors
-      if (httr::http_error(response)) {
-        log_error(sprintf("API request failed: %s", httr::http_status(response)$message))
-        stop("API request failed: ", httr::http_status(response)$message)
-      }
+        # Check for errors
+        if (httr::http_error(response)) {
+          log_error(sprintf("API request failed: %s", httr::http_status(response)$message))
+          stop("API request failed: ", httr::http_status(response)$message)
+        }
 
-      # Parse JSON response
-      content <- httr::content(response, "text", encoding = "UTF-8")
-      parsed  <- jsonlite::fromJSON(content)
+        # Parse JSON response
+        content <- httr::content(response, "text", encoding = "UTF-8")
+        parsed  <- jsonlite::fromJSON(content)
 
-      # Log the parsed response for debugging
-      log_debug(sprintf("Parsed JSON: %s", jsonlite::toJSON(parsed, auto_unbox = TRUE)))
+        # Log the parsed response for debugging
+        log_debug(sprintf("Parsed JSON: %s", jsonlite::toJSON(parsed, auto_unbox = TRUE)))
 
-      log_info("Successfully received response from Ollama API")
+        log_info("Successfully received response from Ollama API")
 
-      # Check if 'response' exists and is non-empty
-      if (!is.null(parsed$response) && nchar(parsed$response) > 0) {
-        return(parsed$response)
-      } else if (!is.null(parsed$message$content) && nchar(parsed$message$content) > 0) {
-        return(parsed$message$content)
-      } else {
-        log_warn("Received empty response from model.")
-        return(NA_character_)
+        # Check if 'response' exists and is non-empty
+        if (!is.null(parsed$response) && nchar(parsed$response) > 0) {
+          return(parsed$response)
+        } else if (!is.null(parsed$message$content) && nchar(parsed$message$content) > 0) {
+          return(parsed$message$content)
+        } else {
+          log_warn("Received empty response from model.")
+          return(NA_character_)
+        }
       }
 
     }, error = function(e) {
