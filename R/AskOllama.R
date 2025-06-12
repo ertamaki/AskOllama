@@ -74,8 +74,43 @@ custom_layout <- function(level, msg, namespace, .logcall, .topcall, .timestamp 
 }
 log_layout(custom_layout)
 
-## AVAILABLE MODELS ----------------------------------------------------------
 .askai_models <- list(
+  "deepseek-r1:70b-llama-distill-fp16" = list(
+    size = "141 GB",
+    description = "Large distilled LLaMA model"
+  ),
+  "llama4:17b-scout-16e-instruct-q8_0" = list(
+    size = "116 GB",
+    description = "Quantized LLaMA-4 17B Scout-16e instruction model"
+  ),
+  "deepseek-r1:32b-qwen-distill-fp16" = list(
+    size = "65 GB",
+    description = "Medium-sized distilled Qwen model"
+  ),
+  "devstral:24b-small-2505-fp16" = list(
+    size = "47 GB",
+    description = "Small Devstral-24B instruction model"
+  ),
+  "magistral:24b-small-2506-fp16" = list(
+    size = "47 GB",
+    description = "Small Magistral-24B instruction model"
+  ),
+  "qwen3:14b-fp16" = list(
+    size = "29 GB",
+    description = "Compact general-purpose model"
+  ),
+  "qwen3:8b-fp16" = list(
+    size = "16 GB",
+    description = "Compact general-purpose model"
+  ),
+  "qwen3:4b-fp16" = list(
+    size = "8.1 GB",
+    description = "Very compact general-purpose model"
+  ),
+  "qwen3:32b-fp16" = list(
+    size = "65 GB",
+    description = "Large Qwen 32B FP16 model"
+  ),
   "qwen3:235b" = list(
     size = "142 GB",
     description = "Large Qwen 235B model (MoE)"
@@ -87,10 +122,6 @@ log_layout(custom_layout)
   "nomic-embed-text:latest" = list(
     size = "274 MB",
     description = "Nomic text embedding model"
-  ),
-  "qwen3:32b-fp16" = list(
-    size = "65 GB",
-    description = "Large Qwen 32B FP16 model"
   ),
   "qwen3:30b-a3b-fp16" = list(
     size = "61 GB",
@@ -107,22 +138,6 @@ log_layout(custom_layout)
   "qwq:32b-fp16" = list(
     size = "65 GB",
     description = "Medium-sized general purpose model"
-  ),
-  "mistral-small:24b-instruct-2501-fp16" = list(
-    size = "47 GB",
-    description = "Medium-sized Mistral instruction model"
-  ),
-  "deepseek-r1:70b-llama-distill-fp16" = list(
-    size = "141 GB",
-    description = "Large distilled LLaMA model"
-  ),
-  "deepseek-r1:32b-qwen-distill-fp16" = list(
-    size = "65 GB",
-    description = "Medium-sized distilled Qwen model"
-  ),
-  "deepseek-r1:70b-llama-distill-q8_0" = list(
-    size = "74 GB",
-    description = "Quantized large distilled LLaMA model"
   ),
   "phi4:14b-fp16" = list(
     size = "29 GB",
@@ -148,27 +163,12 @@ log_layout(custom_layout)
     size = "21 GB",
     description = "Vision-capable LLaMA model"
   ),
-  "marco-o1:7b-fp16" = list(
-    size = "15 GB",
-    description = "Compact general-purpose model"
-  ),
   "llama3.3:70b-instruct-q8_0" = list(
     size = "74 GB",
-    description = "Large instruction-tuned LLaMA model (quantized)"
-  ),
-  "dolphin-llama3:70b-v2.9-q8_0" = list(
-    size = "74 GB",
-    description = "Fine-tuned LLaMA model (quantized)"
-  ),
-  "qwen2.5:32b-instruct-fp16" = list(
-    size = "65 GB",
-    description = "Medium-sized instruction model"
-  ),
-  "mistral-small:22b-instruct-2409-fp16" = list(
-    size = "44 GB",
-    description = "Small Mistral model with high accuracy"
+    description = "Quantized large instruction-tuned LLaMA model"
   )
 )
+
 ## ERROR HANDLING -----------------------------------------------------------
 .askai_errors <- list(
   MODEL_NOT_FOUND = "Model '%s' not found. Use list_models() to see available models.",
